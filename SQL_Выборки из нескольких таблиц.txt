@@ -1,0 +1,183 @@
+1. Количество исполнителей в каждом жанре
+
+musicshop=> SELECT name_genre, COUNT(artist)
+musicshop-> FROM genreartist
+musicshop-> RIGHT JOIN genre ON genreartist.genre = genre.genre_id
+musicshop-> GROUP BY name_genre;
+
+  name_genre  | count
+--------------+-------
+ Pop                |     0
+ Classic Rock |     1
+ Rock              |     1
+ Pop Rock       |     1
+ Indie Pop       |     1
+ Indie Rock     |     1
+ Jazz               |     9
+
+
+2. Количество треков, вошедших в альбомы 2019-2020 годов
+
+musicshop=> SELECT album_name, COUNT(track_id)
+musicshop-> FROM track
+musicshop-> LEFT JOIN album ON track.album = album.album_id
+musicshop-> WHERE year BETWEEN 2019 and 2020
+musicshop-> GROUP BY album_name
+musicshop-> ORDER BY COUNT(track_id) DESC;
+                            album_name                                                              | count
+--------------------------------------------------------------------------------------------------------------+-------
+ The Slow Rush [Japan Edition]                                                           |    12
+ The White Album [50th Anniversary Super Deluxe Edition] [Disc 1] |     9
+ Let It Be                                                                                               |     7
+
+3. Cредняя продолжительность треков по каждому альбому
+
+musicshop=> SELECT album_name, AVG(duration)
+musicshop-> FROM track
+musicshop-> LEFT JOIN album ON track.album = album.album_id
+musicshop-> GROUP BY album_name;
+                            album_name                                                              |         avg
+--------------------------------------------------------------------------------------------------------------+----------------------
+ The White Album [50th Anniversary Super Deluxe Edition] [Disc 1] | 174.4722222222222222
+ Something Else                                                                                    | 291.6500000000000000
+ No Tourists                                                                                           | 226.8020000000000000
+ El Camino (10th Anniversary Super Deluxe Edition)                           | 219.1700000000000000
+ The Slow Rush [Japan Edition]                                                            | 284.8491666666666667
+ Let It Be                                                                                                | 165.4871428571428571
+ Christmas Jazz, Blues & Soul 2021                                                     | 175.8012500000000000
+
+4. все исполнители, которые не выпустили альбомы в 2020 году;
+
+musicshop=> SELECT name_artist FROM artist
+musicshop-> JOIN albumartist ON albumartist.artist = artist.artist_id
+musicshop-> JOIN album ON albumartist.album = album.album_id
+musicshop-> WHERE year != 2020;
+                  name_artist
+------------------------------------------------
+ The Black Keys
+ The Cranberries
+ The Prodigy
+ B.B. King
+ Louis Armstrong & Benny Carter & His Orchestra
+ Jamie Cullum
+ Seth Macfarlane
+ James Brown
+ Sister Rosetta Tharpe
+ The Temptations
+ Stevie Wonder
+ Willie Nelson & Norah Jones
+
+5. Названия сборников, в которых присутствует конкретный исполнитель (The Beatles);
+
+musicshop=> SELECT name from mixtape
+musicshop-> JOIN mixtrack mt ON mt.mixtape = mixtape.id
+musicshop-> JOIN track t ON t.track_id = mt.track
+musicshop-> JOIN albumartist aa ON aa.album = t.album
+musicshop-> WHERE artist = (
+musicshop(> SELECT artist_id from artist
+musicshop(> WHERE name_artist = 'The Beatles')
+musicshop-> GROUP BY mixtape.name;
+        name
+---------------------
+ Easy-breezy
+ My ballentine
+ Speak from my heart
+ Long road
+ First One
+ Christmas
+
+6. Название альбомов, в которых присутствуют исполнители более 1 жанра
+
+
+musicshop=> SELECT album_name FROM album
+musicshop-> JOIN albumartist aa ON aa.album = album.album_id
+musicshop-> JOIN genreartist ga ON ga.artist = aa.artist
+musicshop-> WHERE ga.artist = (
+musicshop(> SELECT artist FROM genreartist
+musicshop(> GROUP BY artist
+musicshop(> HAVING COUNT(artist) > 1)
+musicshop-> GROUP BY album_name;
+   
+
+                 album_name
+---------------------------------------------------
+ El Camino (10th Anniversary Super Deluxe Edition)
+
+7. Наименование треков, которые не входят в сборники
+
+musicshop=> SELECT name_track, mixtape FROM track
+musicshop-> FULL JOIN mixtrack ON track.track_id = mixtrack.track
+musicshop-> WHERE mixtrack.mixtape IS NULL;
+
+
+                   name_track                   | mixtape
+------------------------------------------------+---------
+ Someday At Christmas                   |
+ Dig It (2021 Mix)                              |
+ Maggie Mae (2021 Mix)                   |
+ One More Hour                                |
+ Boom Boom Tap                              |
+ The Glory                                         |
+ While My Guitar Gently Weeps (2018 Stereo Mix) |
+ Patience                                           |
+ O Little Town Of Bethlehem            |
+ Timebomb Zone                               |
+ Mind Eraser (2021 Remaster)          |
+ Nova Baby (2021 Remaster)            |
+ Hang Your Lights (Edit)                    |
+ Linger (Acoustic Version)                |
+ Little Black Submarines (2021 Remaster) |
+ Let It Snow                                       |
+ Champions Of London                      |
+ Dead and Gone (Live in Portland, ME)|
+ Give Me a Signal (feat. Barns Courtney)|
+ Dead and Gone (2021 Remaster)     |
+ Howlin’ for You (Live in Portland, ME)|
+ Back In The U.S.S.R. (2018 Stereo Mix)|
+ Glass Onion (2018 Stereo Mix)         |
+ No Tourists                                        |
+ Resonate                                           |
+ Run Right Back (Live in Portland, ME)|
+ Same Old Thing (Live in Portland, ME) |
+ Need Some1                                       |
+ On Track                                             |
+ A Marshmallow World                        |
+ Martha My Dear (2018 Stereo Mix)     |
+ Across The Universe (2021 Mix)        |
+ Dreams (Acoustic Version)                 |
+ Next Girl (Live in Portland, ME)          |
+ Light Up The Sky                                 |
+ Sister (2021 Remaster)                       |
+ We Live Forever                                   |
+ Christmas In New Orleans                  |
+ Happiness Is A Warm Gun (2018 Stereo Mix)|
+ Fight Fire With Fire (feat. Ho9909)      |
+
+8. Исполнителя(-ей), написавшего самый короткий по продолжительности трек (теоретически таких треков может быть несколько);
+
+musicshop=> SELECT name_artist from artist
+musicshop-> JOIN albumartist aa ON aa.artist = artist.artist_id
+musicshop-> JOIN track t ON t.album = aa.album
+musicshop-> WHERE t.track_id = (
+musicshop(> SELECT track_id from track
+musicshop(> WHERE duration = (
+musicshop(> SELECT MIN(duration) from track));
+ name_artist
+-------------
+ The Beatles
+
+
+
+musicshop=> SELECT album_name, COUNT(track_id) from album
+musicshop-> JOIN track ON album.album_id = track.album
+musicshop-> GROUP BY album_name
+musicshop-> ORDER BY COUNT(track_id) ASC;
+                            album_name                            | count
+----------------------------------------------------------------------------+-------
+ Something Else                                                   |     3
+ Let It Be                                                              |     7
+ Christmas Jazz, Blues & Soul 2021                   |     8
+ The White Album [50th Anniversary Super Deluxe Edition] [Disc 1] |     9
+ No Tourists                                                          |    10
+ The Slow Rush [Japan Edition]                           |    12
+ El Camino (10th Anniversary Super Deluxe Edition)  |    19
